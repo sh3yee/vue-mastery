@@ -340,3 +340,15 @@ DOM 事件处理器 | 触发事件的元素 | 触发事件的元素
 箭头函数继承外层函数的 `this`，没有自己的 `this` 绑定。
 使用 `call`、`apply`、`bind` 可以显式指定 `this` 的值。
 严格模式改变了普通函数调用时 `this` 的默认行为。
+## 参考文档
+### 冴羽 JavaScript 深入系列
+- [JavaScript 深入之从 ECMAScript 规范解读 this](https://github.com/mqyqingfeng/Blog/issues/5)
+- [JavaScript 深入之 call 和 apply 的模拟实现](https://github.com/mqyqingfeng/Blog/issues/11)
+- [JavaScript 深入之 bind 的模拟实现](https://github.com/mqyqingfeng/Blog/issues/14)
+### MDN 官方文档
+- [this](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/this)
+- [Function.prototype.call](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function/call)
+- [Function.prototype.apply](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function/apply)
+- [Function.prototype.bind](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function/bind)
+---
+
