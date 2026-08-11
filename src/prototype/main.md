@@ -710,76 +710,11 @@ console.log(result) // Hello, world
 
 ---
 
-# 十、对象创建方式与优缺点
+# 十、对象创建的常用方式
 
-## 1. 对象字面量
+少量对象可以直接使用对象字面量；需要创建多个同类对象时，可以使用构造函数或 `class`。现阶段不必背诵工厂模式、构造函数模式、原型模式等分类名称。
 
-```js
-const person = {
-  name: '小明',
-  sayName() {
-    return this.name
-  },
-}
-```
-
-优点：简单、直观，适合创建少量对象。
-
-缺点：如果大量创建同结构对象，方法可能被重复创建。
-
-## 2. 工厂模式
-
-```js
-function createPerson(name) {
-  return {
-    name,
-    sayName() {
-      return this.name
-    },
-  }
-}
-```
-
-优点：封装创建过程，可以传入参数。
-
-缺点：每个对象都会创建一份 `sayName`；通常不能通过 `instanceof` 识别为特定类型。
-
-## 3. 构造函数模式
-
-```js
-function Person(name) {
-  this.name = name
-  this.sayName = function () {
-    return this.name
-  }
-}
-```
-
-优点：可以使用 `new`，实例能通过 `instanceof Person` 识别。
-
-缺点：方法写在构造函数中，每次创建实例都会生成新的函数。
-
-## 4. 原型模式
-
-```js
-function Person(name) {
-  this.name = name
-}
-
-Person.prototype.sayName = function () {
-  return this.name
-}
-```
-
-优点：方法被所有实例共享，不会重复创建。
-
-缺点：如果把可变引用类型直接放到 prototype 上，会被所有实例共享：
-
-```js
-Person.prototype.hobbies = [] // 容易造成共享状态问题
-```
-
-## 5. 组合模式：最常用的传统写法
+传统写法的核心原则是：**实例数据放在构造函数中，共享方法放在 `prototype` 上。**
 
 ```js
 function Person(name) {
@@ -794,14 +729,11 @@ Person.prototype.sayName = function () {
 }
 ```
 
-记忆方法：
+这里的构造函数就是通过 `new` 创建实例时执行的 `Person`。每次执行 `new Person()`，其中的 `this` 都指向本次创建的新实例，因此 `hobbies` 是相互独立的。
 
-```text
-实例数据：构造函数中初始化
-共享行为：prototype 上定义
-```
+如果把数组写成 `Person.prototype.hobbies = []`，它只会创建一次，所有实例会访问同一个数组，一个实例修改后会影响其他实例。
 
-## 6. `Object.create()`
+## 1. `Object.create()`
 
 ```js
 const animal = {
@@ -868,7 +800,7 @@ console.log(dictionary.toString) // undefined
 
 `Object.create(null)` 适合创建纯粹的字典对象，但它没有 `hasOwnProperty`、`toString` 等常用方法。
 
-## 7. 类语法
+## 2. 类语法
 
 ```js
 class Person {
@@ -896,121 +828,9 @@ console.log(Object.hasOwn(Person.prototype, 'sayName')) // true
 
 # 十一、继承方式与优缺点
 
-## 1. 原型链继承
+旧资料中常见原型链继承、借用构造函数、组合继承、原型式继承、寄生式继承等名称。现阶段只需知道：这些方案是在解决**实例状态独立、父构造函数传参、原型方法共享**三个问题，不必逐一背诵。
 
-```js
-function Parent() {
-  this.colors = ['red', 'blue']
-}
-
-Parent.prototype.getColors = function () {
-  return this.colors
-}
-
-function Child() {}
-
-Child.prototype = new Parent()
-```
-
-问题：
-
-- 父构造函数中的引用类型属性会被所有子实例共享；
-- 创建子实例时无法方便地给父构造函数传参；
-- 重写 `Child.prototype` 后需要手动修复 `constructor`。
-
-## 2. 借用构造函数继承
-
-```js
-function Parent(name) {
-  this.name = name
-  this.colors = []
-}
-
-function Child(name) {
-  Parent.call(this, name)
-}
-```
-
-优点：
-
-- 每个子实例都有独立的实例属性；
-- 可以向父构造函数传参。
-
-缺点：
-
-- 父类方法如果定义在构造函数中，仍会被重复创建；
-- 子实例没有连接到 `Parent.prototype`，无法自然继承父类原型方法。
-
-## 3. 组合继承
-
-组合继承把上面两种方式结合起来：
-
-```js
-function Parent(name) {
-  this.name = name
-  this.colors = []
-}
-
-Parent.prototype.getName = function () {
-  return this.name
-}
-
-function Child(name, age) {
-  Parent.call(this, name)
-  this.age = age
-}
-
-Child.prototype = new Parent()
-Child.prototype.constructor = Child
-```
-
-优点：兼顾了实例属性独立和原型方法共享。
-
-缺点：父构造函数会执行两次：
-
-```text
-Child.prototype = new Parent()  // 第一次
-new Child() 内部的 Parent.call() // 第二次
-```
-
-## 4. 原型式继承
-
-```js
-const person = {
-  name: '小明',
-  friends: ['小红'],
-}
-
-const person1 = Object.create(person)
-const person2 = Object.create(person)
-
-person1.friends.push('小刚')
-console.log(person2.friends) // ['小红', '小刚']
-```
-
-它适合“基于一个已有对象创建另一个对象”，但原型中的引用类型仍然会共享。
-
-## 5. 寄生式继承
-
-寄生式继承是在原型式继承的基础上，为新对象增加额外能力：
-
-```js
-function createPerson(source) {
-  const person = Object.create(source)
-
-  person.sayHello = function () {
-    return `你好，我是 ${this.name}`
-  }
-
-  return person
-}
-```
-
-缺点是每次调用都会创建新的方法函数。
-
-## 6. 寄生组合式继承
-
-传统写法可以用 `Object.create()` 直接表达：
+传统继承的最终推荐形式可以用 `Object.create()` 直接表达：
 
 ```js
 function Parent(name) {
@@ -1031,12 +851,35 @@ Child.prototype = Object.create(Parent.prototype)
 Child.prototype.constructor = Child
 ```
 
+`prototype.constructor` 是原型对象上的普通属性，默认指回对应的构造函数，例如 `Child.prototype.constructor === Child`。
+
+第一行替换了 `Child` 原来的原型对象，新原型会从 `Parent.prototype` 找到指向 `Parent` 的 `constructor`；第二行是在新原型上重新添加 `constructor`，让它指回 `Child`。它只修正指向，不负责建立继承关系。
+
+这和 `const rabbit = Object.create(animal)` 原理相同：都是让左边对象的原型指向参数对象。
+
+```text
+rabbit → animal
+Child.prototype → Parent.prototype
+```
+
+区别只在用途：前者让一个普通对象继承 `animal`；后者会让每个通过 `new Child()` 创建的实例先指向 `Child.prototype`，再沿原型链找到 `Parent.prototype`：
+
+```text
+child1 ─┐
+  ├→ Child.prototype → Parent.prototype
+child2 ─┘
+```
+
+因此，所有 `Child` 实例都能访问父原型的方法。严格来说，实例不是直接指向 `Parent.prototype`，而是通过 `Child.prototype` 间接连接到它。
+
 这种方式：
 
 - 只调用一次父构造函数；
 - 子实例独立拥有父构造函数中的数据；
 - 子类原型通过链路访问父类原型方法；
 - `instanceof` 和 `isPrototypeOf` 仍然正常工作。
+
+二者都用于检查原型链关系：`child instanceof Parent` 检查 `Parent.prototype` 是否在 `child` 的原型链上，右侧使用构造函数；`Parent.prototype.isPrototypeOf(child)` 则由原型对象检查自己是否在 `child` 的原型链上。
 
 在现代代码中，通常直接使用类：
 
