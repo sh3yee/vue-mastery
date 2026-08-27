@@ -337,22 +337,78 @@ console.log('同步结束')
 
 ### 3. 实际用途：统一同步与异步分支的时序
 
-假设缓存命中时数据可同步取得，未命中时要异步请求。若直接触发回调，调用方会得到不一致的顺序：
+假设 `getData()` 优先从缓存取数据：缓存命中时可以立即取得，未命中时则要通过 `fetch()` 异步请求。若缓存命中后直接调用 `onLoad()`，同一个 API 就会出现两种不同的回调时序：
 
 ```js
 function getData(cache, key, onLoad) {
   if (cache.has(key)) {
-    onLoad(cache.get(key)) // 同步执行：顺序不一致
+    onLoad(cache.get(key)) // 缓存命中：同步调用
     return
   }
 
   fetch(`/api/${key}`)
     .then((response) => response.json())
-    .then(onLoad) // 微任务中执行
+    .then(onLoad) // 缓存未命中：请求完成后异步调用
 }
 ```
 
-可将缓存分支也推入微任务，使两条路径都异步、且都在当前任务结束后执行：
+结合调用方来看，问题会更直观。先创建一个缓存，并提前放入 `user` 数据：
+
+```js
+const cache = new Map()
+cache.set('user', { name: '张三' })
+
+console.log('调用前')
+
+getData(cache, 'user', (data) => {
+  console.log('收到数据', data)
+})
+
+console.log('调用后')
+```
+
+此时 `cache.has('user')` 为 `true`，属于**缓存命中**，原实现会同步调用 `onLoad()`：
+
+```text
+调用前 → 收到数据 → 调用后
+```
+
+如果改为空缓存，则属于**缓存未命中**：
+
+```js
+const cache = new Map()
+
+console.log('调用前')
+
+getData(cache, 'user', (data) => {
+  console.log('收到数据', data)
+})
+
+console.log('调用后')
+```
+
+`cache.has('user')` 此时为 `false`，`getData()` 会执行 `fetch()`；`onLoad()` 只能在网络请求完成后异步执行：
+
+```text
+调用前 → 调用后 → 收到数据
+```
+
+也就是说，`onLoad()` 有时会在 `getData()` 返回前执行，有时会在返回后执行。调用方的状态可能因此产生不同结果：
+
+```js
+const cache = new Map([['user', { name: '张三' }]])
+let ready = false
+
+getData(cache, 'user', () => {
+  console.log(ready)
+})
+
+ready = true
+
+// 原实现中：缓存命中输出 false，未命中输出 true
+```
+
+调用方不应该仅因缓存中是否有数据，就得到不同的程序行为。可以使用 `queueMicrotask()` 将缓存分支的回调也改为异步执行：
 
 ```js
 function getData(cache, key, onLoad) {
@@ -369,7 +425,14 @@ function getData(cache, key, onLoad) {
 }
 ```
 
-这类写法常见于库和框架：它的目标不是“更快”，而是提供稳定、可预测的 API 时序。
+  修改后，两条路径都遵守同一个约定：**`onLoad()` 一定在 `getData()` 返回之后执行。** 因此上面的 `ready` 无论是否命中缓存都会输出 `true`。
+
+  这里统一的是“回调不会同步执行”这一 API 契约，而不是具体完成时间：
+
+  - 缓存命中：当前同步代码结束后，在微任务中调用 `onLoad()`；
+  - 缓存未命中：网络请求完成后，再通过 Promise 微任务调用 `onLoad()`。
+
+  未命中缓存显然可能等待更久。`queueMicrotask()` 的目的不是让请求更快，也不是让两条路径同时完成，而是消除“有时同步、有时异步”的不确定性，为调用方提供稳定、可预测的执行时序。这类处理常见于库和框架的 API 设计中。
 
 ### 4. 实际用途：批量合并同一轮操作
 
@@ -493,13 +556,13 @@ console.log('脚本仍在继续')
 
 ### 2. 错误理解：`await` 后面的代码还是同步代码
 
-**正确理解**：`await` 会暂停当前 `async` 函数；即使等待的是已完成的 Promise，后续代码也会异步恢复到微任务队列。
+**正确理解**：`await` 之前的代码会在调用 `async` 函数时同步执行；遇到 `await` 后，当前函数暂停并暂时返回。即使等待的是已完成的 Promise，JavaScript 也会安排一个微任务，在当前同步代码结束后恢复该函数。
 
 ```js
 async function run() {
-  console.log('async start')
+  console.log('async start') // 调用 run() 时同步执行
   await Promise.resolve()
-  console.log('after await')
+  console.log('after await') // run() 在微任务中恢复后执行
 }
 
 run()
@@ -510,6 +573,18 @@ console.log('script end')
 // script end
 // after await
 ```
+
+这里并不是把 `console.log('after await')` 这一行单独放进微任务队列，而是把“**从 `await` 后面继续执行 `run()`**”这一恢复操作安排为微任务：
+
+```text
+1. 调用 run()，同步输出 async start
+2. 遇到 await，run() 暂停，登记“继续执行 run()”的微任务
+3. 顶层脚本继续执行，输出 script end
+4. 当前同步代码结束，执行微任务，run() 从 await 后恢复
+5. 输出 after await
+```
+
+如果 `await` 后面有多行代码，它们也不是每行各占一个微任务；函数恢复后，这些代码仍会像普通同步代码一样依次执行，直到函数结束或再次遇到 `await`。因此，准确说法是：**`await` 后续代码由微任务异步恢复执行，恢复后的代码段内部仍按同步顺序运行。**
 
 ### 3. 错误理解：微任务越多越好、越快越好
 
