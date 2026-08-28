@@ -18,17 +18,13 @@ const emit = defineEmits<{
 
 const { output, isRunning, runCode, stop, clear } = useCodeRunner()
 const {
-  loaded,
   saving,
   lastSavedAt,
-  saveError,
-  hasHandle,
+  devWritable,
   loadFromFile,
-  saveNow,
   getEdit,
   setEdit,
   removeEdit,
-  clearStoredHandle,
 } = usePersistedEdits()
 
 const code = ref('')
@@ -39,6 +35,8 @@ const showAnswer = ref(false)
 let lastId: number | null = null
 let lastOriginal = ''
 let lastTopicId = ''
+// reset 时置 true，让紧接着的 watch(code) 跳过 flush，避免把存档当“与原题一致”删掉
+let suppressFlushOnce = false
 
 // 按 Question.group 分组，用于侧边栏展示
 const grouped = computed(() => {
@@ -78,6 +76,10 @@ const isModified = computed(() => {
 // 把当前编辑器里的代码同步进 edits（仅在确实改过、且与已存值不同时才写，
 // 与原题一致时顺便清掉旧记录）。幂等，载入题目时重复调用也不会引发多余写盘。
 function flushCurrentEdit() {
+  if (suppressFlushOnce) {
+    suppressFlushOnce = false
+    return
+  }
   if (lastId === null) return
   const qid = lastId
   if (code.value === lastOriginal) {
@@ -108,24 +110,14 @@ function onRun() {
   runCode(code.value)
 }
 
-async function onSave() {
-  flushCurrentEdit()
-  await saveNow()
-}
-
-async function onReset() {
+// 重置是“暂时”的：只把编辑器切回原题代码，不删存档、不写盘。
+// 刷新页面后，loadFromFile 会把存档里的改动恢复回来。
+function onReset() {
   const q = currentQuestion.value
   if (q) {
-    removeEdit(props.topic.id, q.id)
+    suppressFlushOnce = true
     code.value = q.code
   }
-  await saveNow() // 重置要立即写盘，刷新后才不会把旧改动又加载回来
-}
-
-// 句柄失效（权限被收回 / 想换文件）时：清掉旧句柄再触发显式保存，会重新弹选择框
-async function onReauthorize() {
-  await clearStoredHandle()
-  await saveNow()
 }
 
 function formatTime(ts: number): string {
@@ -135,13 +127,8 @@ function formatTime(ts: number): string {
 }
 
 const saveStatus = computed(() => {
-  if (saveError.value) return saveError.value
+  if (!devWritable.value) return '自动保存仅支持 npm run dev'
   if (saving.value) return '保存中…'
-  if (!hasHandle.value) {
-    return isModified.value
-      ? '改动仅在内存，点「保存」选择 public/runner-edits.json 启用自动同步'
-      : '尚未启用文件同步，点「保存」可把改动写入仓库'
-  }
   if (lastSavedAt.value) return `已自动保存 ${formatTime(lastSavedAt.value)}`
   return ''
 })
@@ -215,20 +202,14 @@ watch(
             <button class="btn primary" :disabled="isRunning" @click="onRun">运行</button>
             <button class="btn" :disabled="!isRunning" @click="stop">停止</button>
             <button class="btn" @click="onReset">重置</button>
-            <button class="btn" :disabled="!loaded || saving" @click="onSave">
-              {{ saving ? '保存中…' : '保存' }}
-            </button>
             <button class="btn" @click="showAnswer = !showAnswer">
               {{ showAnswer ? '隐藏答案' : '显示答案' }}
             </button>
           </div>
         </div>
 
-        <div v-if="saveStatus" class="save-status" :class="{ error: saveError }">
+        <div v-if="saveStatus" class="save-status">
           <span>{{ saveStatus }}</span>
-          <button v-if="hasHandle && saveError" class="link" @click="onReauthorize">
-            重新选择文件
-          </button>
         </div>
 
         <div class="panes">
@@ -259,8 +240,8 @@ watch(
     </div>
 
     <footer class="page-footer">
-      运行环境为浏览器 Web Worker，不支持 DOM（document/window）；顶层 await 需写在 async 函数内。长时间运行或死循环会在 5 秒后自动终止。代码改动可「保存」到
-      public/runner-edits.json，随仓库 git 同步到其他设备。
+      运行环境为浏览器 Web Worker，不支持 DOM（document/window）；顶层 await 需写在 async 函数内。长时间运行或死循环会在 5 秒后自动终止。代码改动自动写入
+      public/runner-edits.json（仅 npm run dev 环境），随仓库 git 同步到其他设备。
     </footer>
   </div>
 </template>
@@ -461,19 +442,6 @@ body {
   background: #f3f4f6;
   font-size: 12px;
   color: #6b7280;
-}
-.save-status.error {
-  background: #fef2f2;
-  color: #b91c1c;
-}
-.link {
-  border: none;
-  background: transparent;
-  color: #2563eb;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
 }
 
 .panes {
