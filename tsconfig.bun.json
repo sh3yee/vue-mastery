@@ -2,6 +2,7 @@
   "include": [
     "vite.config.*",
     "runner-edits-server.ts",
+    "notes-plugin.ts",
     "vitest.config.*",
     "cypress.config.*",
     "playwright.config.*",

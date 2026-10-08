@@ -10,6 +10,7 @@ const props = defineProps<{
   topic: Topic
   // 可选：传入多个专题时，页面头部出现切换器；只有一个专题时不显示
   availableTopics?: Topic[]
+  embedded?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -95,6 +96,7 @@ watch(code, () => {
 })
 
 function loadQuestion(q: Question) {
+  stop()
   // 先把上一题的改动落盘，再切到新题
   flushCurrentEdit()
   code.value = getEdit(props.topic.id, q.id) ?? q.code
@@ -151,7 +153,7 @@ watch(
 </script>
 
 <template>
-  <div class="page">
+  <div class="page" :class="{ embedded }">
     <header class="page-header">
       <div class="header-text">
         <h1>{{ topic.name }}</h1>
@@ -246,20 +248,6 @@ watch(
   </div>
 </template>
 
-<style>
-/* 整页填满视口，关闭窗口滚动条；只有侧边栏等指定容器保留内部滚动 */
-html,
-body {
-  margin: 0;
-  height: 100%;
-  overflow: hidden;
-}
-
-#app {
-  height: 100%;
-}
-</style>
-
 <style scoped>
 .page {
   display: flex;
@@ -267,6 +255,13 @@ body {
   height: 100vh;
   background: #f7f7f8;
   color: #1f2328;
+}
+.page.embedded {
+  height: 100%;
+}
+.embedded .sidebar {
+  width: 240px;
+  flex-basis: 240px;
 }
 
 .page-header {
@@ -536,6 +531,55 @@ body {
   .sidebar {
     flex: 0 0 220px;
     width: 220px;
+  }
+  .embedded .sidebar {
+    flex-basis: 180px;
+    width: 180px;
+  }
+  .main {
+    overflow-y: auto;
+  }
+  .panes {
+    flex: 0 0 auto;
+    min-height: 620px;
+  }
+  .pane {
+    min-height: 300px;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .body {
+    flex-direction: column;
+  }
+  .sidebar, .embedded .sidebar {
+    width: 100%;
+    flex: 0 0 140px;
+    border-right: 0;
+    border-bottom: 1px solid #e5e5e7;
+  }
+  .page-header {
+    padding: 12px 16px;
+  }
+  .page-header h1 {
+    font-size: 16px;
+  }
+  .page-header p {
+    font-size: 12px;
+  }
+  .toolbar-actions {
+    gap: 6px;
+  }
+  .btn {
+    padding: 6px 10px;
+  }
+  .page-footer {
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.5;
   }
 }
 </style>

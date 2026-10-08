@@ -5,6 +5,17 @@ Vue 3 + TypeScript + Vite 学习项目，使用 Bun 管理依赖并执行开发�
 需要 Bun 1.4.2 或更新版本，安装方式见 [Bun 官方文档](https://bun.sh/docs/installation)。
 `bunfig.toml` 强制脚本使用 Bun 运行时和 Bun Shell。
 
+## 网页笔记
+
+- 左侧按基础概念、函数与应用、异步与调度分组，点击章节阅读现有的 9 篇笔记。
+- 正文支持 JavaScript / TypeScript / JSON 语法高亮、代码复制、表格、折叠答案；本章目录可跳转到小节，地址可分享、刷新和前进后退。
+- “动手实验”章节保留选题、代码运行、答案与自动保存；切到笔记后再返回会保留编辑状态。
+- 手机端通过顶部菜单打开章节导航，正文上方可展开本章目录。
+
+继续编辑 `src/<主题>/main.md` 即可更新网页内容。新增笔记时在
+`src/notes/chapters.ts` 的 `noteDefinitions` 中添加章节信息；实验专题仍在 `src/topics/index.ts` 注册。
+Markdown 由 `notes-plugin.ts` 使用 Bun 内置解析器转换成网页，无需新增渲染依赖。
+
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).

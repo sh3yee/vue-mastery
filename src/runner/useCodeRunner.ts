@@ -1,4 +1,4 @@
-import { ref, shallowRef, onBeforeUnmount } from 'vue'
+import { ref, shallowRef, onBeforeUnmount, onDeactivated } from 'vue'
 import { workerSource } from './workerSource'
 
 export type LogLevel = 'log' | 'info' | 'warn' | 'error'
@@ -102,6 +102,9 @@ export function useCodeRunner() {
   function clear() {
     output.value = []
   }
+
+  // 实验章节被缓存时停止后台 Worker，保留编辑器和已有输出。
+  onDeactivated(stop)
 
   onBeforeUnmount(() => {
     terminateWorker()
