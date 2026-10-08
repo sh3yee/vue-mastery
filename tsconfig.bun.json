@@ -3,6 +3,7 @@
     "vite.config.*",
     "runner-edits-server.ts",
     "notes-plugin.ts",
+    "scripts/**/*.ts",
     "vitest.config.*",
     "cypress.config.*",
     "playwright.config.*",

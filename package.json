@@ -10,7 +10,7 @@
     "build": "bun run type-check && bun run build-only",
     "preview": "bun --bun vite preview",
     "build-only": "bun --bun vite build",
-    "type-check": "bun --bun vue-tsc --build"
+    "type-check": "bun scripts/vue-tsc.ts --build"
   },
   "dependencies": {
     "vue": "^3.5.32"

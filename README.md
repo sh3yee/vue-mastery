@@ -74,6 +74,8 @@ bun run build
 ```
 
 构建先执行 Vue 类型检查，通过后再打包；构建失败会返回非零退出码。
+`scripts/vue-tsc.ts` 通过 Bun 加载插件保留 vue-tsc 的 Vue 编译器补丁，
+确保组件脚本和模板都参与类型检查，无需安装 Node.js。
 
 ### Type-Check Only
 
