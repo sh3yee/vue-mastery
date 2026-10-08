@@ -127,7 +127,7 @@ function formatTime(ts: number): string {
 }
 
 const saveStatus = computed(() => {
-  if (!devWritable.value) return '自动保存仅支持 npm run dev'
+  if (!devWritable.value) return '自动保存仅支持 bun run dev'
   if (saving.value) return '保存中…'
   if (lastSavedAt.value) return `已自动保存 ${formatTime(lastSavedAt.value)}`
   return ''
@@ -241,7 +241,7 @@ watch(
 
     <footer class="page-footer">
       运行环境为浏览器 Web Worker，不支持 DOM（document/window）；顶层 await 需写在 async 函数内。长时间运行或死循环会在 5 秒后自动终止。代码改动自动写入
-      public/runner-edits.json（仅 npm run dev 环境），随仓库 git 同步到其他设备。
+      public/runner-edits.json（仅 bun run dev 环境），随仓库 git 同步到其他设备。
     </footer>
   </div>
 </template>

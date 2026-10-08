@@ -1,6 +1,9 @@
-# .
+# Vue Mastery
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 + TypeScript + Vite 学习项目，使用 Bun 管理依赖并执行开发、类型检查和构建命令。
+
+需要 Bun 1.4.2 或更新版本，安装方式见 [Bun 官方文档](https://bun.sh/docs/installation)。
+`bunfig.toml` 强制脚本使用 Bun 运行时和 Bun Shell。
 
 ## Recommended IDE Setup
 
@@ -25,18 +28,44 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 
 ## Project Setup
 
-```sh
-npm install
+```powershell
+bun install --frozen-lockfile
 ```
+
+依赖版本统一由 `bun.lock` 管理，请将它提交到 Git。更新依赖后使用 `bun install` 同步锁文件。
+`node_modules` 是 Bun 使用的依赖目录；Bun 类型和 Vite 内部仍包含兼容类型，
+编辑持久化使用 Bun 支持的 `node:fs` API 保留原子写入，无需单独安装 Node.js。
 
 ### Compile and Hot-Reload for Development
 
-```sh
-npm run dev
+```powershell
+bun run dev
 ```
 
 ### Type-Check, Compile and Minify for Production
 
-```sh
-npm run build
+```powershell
+bun run build
+```
+
+构建先执行 Vue 类型检查，通过后再打包；构建失败会返回非零退出码。
+
+### Type-Check Only
+
+```powershell
+bun run type-check
+```
+
+### Build Only
+
+```powershell
+bun run build-only
+```
+
+向 Vite 传递构建参数时，使用 `bun run build-only --base=/your-path/`。
+
+### Preview Production Build
+
+```powershell
+bun run preview
 ```

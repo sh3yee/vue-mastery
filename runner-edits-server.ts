@@ -1,12 +1,11 @@
 import { writeFileSync, renameSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 
 // 编辑持久化的 dev 后端：让浏览器把编辑器改动直接写进 public/runner-edits.json，
-// 随仓库 git 同步到其他设备。只在 npm run dev 下挂载（configureServer）；
+// 随仓库 git 同步到其他设备。只在 bun run dev 下挂载（configureServer）；
 // preview / 部署不挂，客户端探测到不可写会静默降级为只读。
 
-const FILE = fileURLToPath(new URL('./public/runner-edits.json', import.meta.url))
+const FILE = `${import.meta.dir}/public/runner-edits.json`
 const TMP = `${FILE}.tmp`
 const ENDPOINT = '/__runner-edits'
 
@@ -32,7 +31,7 @@ export function runnerEditsPlugin(): Plugin {
             for await (const c of req) chunks.push(c as Buffer)
             const text = Buffer.concat(chunks).toString('utf8')
             JSON.parse(text) // 坏 JSON 在此抛错
-            // 原子写：先写 tmp 再 rename，避免中途崩溃留下半截脏文件
+            // Bun 的 fs 兼容 API：同步写 tmp 再 rename，避免并发写入或崩溃留下半截文件
             writeFileSync(TMP, text, 'utf8')
             renameSync(TMP, FILE)
             res.statusCode = 200

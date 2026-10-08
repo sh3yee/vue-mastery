@@ -4,7 +4,7 @@ import { ref, watch, onBeforeUnmount } from 'vue'
 // 随仓库 git commit/push → 换台电脑 git pull 即可同步。
 //
 // 写入：POST /__runner-edits，由 vite.config.ts 里的 runnerEditsPlugin 中间件
-//   用 Node fs 直接写盘（仅 npm run dev 下挂载）。
+//   由 Bun 执行文件写入（仅 bun run dev 下挂载）。
 // 读取：fetch('/runner-edits.json')，开发态从 public 直读、生产态从部署站点读。
 //
 // 自动保存：edits 变动后延时 1.2s 静默写盘，无需任何按钮。
