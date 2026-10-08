@@ -5,12 +5,12 @@ import { ref, watch, onBeforeUnmount } from 'vue'
 //
 // 写入：POST /__runner-edits，由 vite.config.ts 里的 runnerEditsPlugin 中间件
 //   由 Bun 执行文件写入（仅 bun run dev 下挂载）。
-// 读取：fetch('/runner-edits.json')，开发态从 public 直读、生产态从部署站点读。
+// 读取：按 Vite 部署路径访问 runner-edits.json，支持 GitHub Pages 子目录。
 //
 // 自动保存：edits 变动后延时 1.2s 静默写盘，无需任何按钮。
 //   非 dev 环境（preview / 部署）探测到端点不存在 → devWritable=false，静默降级为只读。
 
-const EDITS_URL = '/runner-edits.json'
+const EDITS_URL = `${import.meta.env.BASE_URL}runner-edits.json`
 const SAVE_URL = '/__runner-edits'
 const AUTO_SAVE_MS = 1200
 
@@ -34,6 +34,7 @@ export function usePersistedEdits() {
   // 探测是否在 dev 环境（端点存在且确实是我的中间件）。
   // 失败 / 端点不存在 / SPA 回退成 index.html → 视为只读。
   async function probeDev() {
+    if (!import.meta.env.DEV) return
     try {
       const res = await fetch(SAVE_URL, { method: 'GET', cache: 'no-store' })
       devWritable.value = await isOkResponse(res)

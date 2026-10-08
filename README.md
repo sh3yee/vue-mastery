@@ -2,6 +2,8 @@
 
 Vue 3 + TypeScript + Vite 学习项目，使用 Bun 管理依赖并执行开发、类型检查和构建命令。
 
+在线地址：[JavaScript 学习笔记](https://sh3yee.github.io/vue-mastery/)
+
 需要 Bun 1.4.2 或更新版本，安装方式见 [Bun 官方文档](https://bun.sh/docs/installation)。
 `bunfig.toml` 强制脚本使用 Bun 运行时和 Bun Shell。
 
@@ -15,6 +17,18 @@ Vue 3 + TypeScript + Vite 学习项目，使用 Bun 管理依赖并执行开发�
 继续编辑 `src/<主题>/main.md` 即可更新网页内容。新增笔记时在
 `src/notes/chapters.ts` 的 `noteDefinitions` 中添加章节信息；实验专题仍在 `src/topics/index.ts` 注册。
 Markdown 由 `notes-plugin.ts` 使用 Bun 内置解析器转换成网页，无需新增渲染依赖。
+
+## GitHub Pages 部署
+
+首次发布时，在仓库 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。
+随后在 **Actions → Deploy GitHub Pages** 中点击 **Run workflow** 完成首次部署。
+之后推送到 `main` 分支会自动更新网站。
+
+工作流使用 `package.json` 中指定的 Bun 版本、`bun.lock` 锁定的依赖和 `bun run build`。
+部署路径从 GitHub Pages 配置读取，本地开发继续使用根路径。
+
+在线版支持阅读笔记、复制代码和运行实验。实验编辑不会写回仓库；
+自动保存到 `public/runner-edits.json` 仅在本地开发环境可用。
 
 ## Recommended IDE Setup
 

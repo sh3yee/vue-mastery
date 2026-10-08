@@ -6,6 +6,7 @@ import { notesPlugin } from './notes-plugin'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH ?? '/',
   plugins: [
     notesPlugin(),
     vue(),
