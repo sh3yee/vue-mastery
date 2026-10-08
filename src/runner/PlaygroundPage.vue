@@ -240,11 +240,6 @@ watch(
         </section>
       </main>
     </div>
-
-    <footer class="page-footer">
-      运行环境为浏览器 Web Worker，不支持 DOM（document/window）；顶层 await 需写在 async 函数内。长时间运行或死循环会在 5 秒后自动终止。代码改动自动写入
-      public/runner-edits.json（仅 bun run dev 环境），随仓库 git 同步到其他设备。
-    </footer>
   </div>
 </template>
 
@@ -515,15 +510,6 @@ watch(
   color: #1f2328;
 }
 
-.page-footer {
-  flex: 0 0 auto;
-  padding: 8px 20px;
-  border-top: 1px solid #e5e5e7;
-  background: #fff;
-  font-size: 12px;
-  color: #9ca3af;
-}
-
 @media (max-width: 880px) {
   .panes {
     flex-direction: column;
@@ -575,11 +561,6 @@ watch(
   }
   .btn {
     padding: 6px 10px;
-  }
-  .page-footer {
-    padding: 8px 12px;
-    font-size: 11px;
-    line-height: 1.5;
   }
 }
 </style>

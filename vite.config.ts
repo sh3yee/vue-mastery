@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
 import { runnerEditsPlugin } from './runner-edits-server'
 import { notesPlugin } from './notes-plugin'
 
@@ -10,7 +9,6 @@ export default defineConfig({
   plugins: [
     notesPlugin(),
     vue(),
-    vueDevTools(),
     runnerEditsPlugin(),
   ],
   resolve: {
