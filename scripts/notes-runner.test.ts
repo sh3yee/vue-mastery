@@ -79,3 +79,21 @@ test('所有章节的围栏代码块都保留交互挂载点，包括折叠块',
   expect(total).toBeGreaterThan(0)
   console.log(`已检查 ${total} 个代码块`)
 })
+
+test('对象关系图渲染为 HTML 图示，不生成代码运行入口', async () => {
+  const document = await renderNote(await Bun.file('src/deep-clone/main.md').text())
+  const figures = document.html.match(/<figure class="ref-diagram">[\s\S]*?<\/figure>/g) ?? []
+  expect(figures).toHaveLength(6)
+  for (const figure of figures) {
+    expect(figure).toContain('class="ref-object"')
+    expect(figure).toContain('<figcaption>')
+    expect(figure).not.toContain('note-code-block')
+  }
+})
+
+test('HTML 图示仅保留允许的样式类，移除事件与内联样式', async () => {
+  const document = await renderNote('<figure class="ref-diagram unknown" onclick="alert(1)" style="color:red"><div class="ref-object note-code-block">对象 A</div><script>alert(1)</script></figure>')
+  expect(document.html).toContain('class="ref-diagram"')
+  expect(document.html).toContain('class="ref-object"')
+  expect(document.html).not.toMatch(/onclick|style=|unknown|note-code-block|<script/)
+})

@@ -176,6 +176,48 @@ console.log(Object.hasOwn(source, 'name')) // true：现代 API，含义相同
 
 ### 1. 先看基础版会遇到的两个问题
 
+#### 先弄懂：两个名字，可以指向同一个对象
+
+看下面两行代码：
+
+```js
+const a = { count: 1 }
+const b = a
+
+console.log(a === b) // true：a 和 b 指向同一个对象
+
+b.count = 2
+console.log(a.count) // 2：通过 a 读到的也是这个对象
+```
+
+第一行的 `{ count: 1 }` 创建了一个对象，变量 `a` 指向它。第二行把 `a` 保存的**引用**赋给 `b`，可以把引用理解为“找到这个对象的方式”。这次赋值没有创建新对象，现在通过 `a`、`b` 都能找到原来的那个对象。
+
+下面用箭头表示“指向”。A、B、C 只是为了讲解给对象起的代号，不是需要写进代码的变量名。
+
+<figure class="ref-diagram">
+  <div class="ref-heading">两个变量，共用一个对象</div>
+  <div class="ref-row">
+    <div class="ref-sources"><span class="ref-name">a</span><span class="ref-name">b</span></div>
+    <span class="ref-arrow"></span>
+    <div class="ref-object"><span class="ref-title">对象 A</span><span class="ref-value">count: 1</span></div>
+  </div>
+  <figcaption>a 和 b 都指向右边的同一个对象，赋值没有创建新对象。</figcaption>
+</figure>
+
+`b.count = 2` 修改的是对象 A 的属性。随后读取 `a.count`，访问的还是 A，所以得到 `2`。
+
+还要记住：**用 `===` 比较两个对象时，判断的是“是不是同一个对象”。内容一样，不代表是同一个对象。**
+
+```js
+const a = { count: 1 }
+const b = { count: 1 }
+
+console.log(a === b) // false：两次对象字面量分别创建了一个对象
+console.log(a.count === b.count) // true：两个属性的值都是数字 1
+```
+
+接下来的两个问题，都和“同一个对象被多次遇到”有关。
+
 #### 问题一：对象的属性引用了对象自己
 
 ```js
@@ -186,13 +228,55 @@ console.log(source.self === source) // true
 console.log(source.self.self === source) // true
 ```
 
-`self` 是我们自己添加的普通属性名，不是特殊语法。`source.self = source` 把 `source` 所引用的对象赋给它自己的 `self` 属性，没有创建第二个对象。
+先逐行理解这里发生了什么：
 
-因此，读取 `source.self` 得到的还是这个对象；继续读取 `source.self.self`，得到的也还是它。这是**循环引用**的一种情况。
+1. `const source = { name: '小明' }` 创建对象 A，让 `source` 指向 A。
+2. `source.self = source` 给 A 添加一个叫 `self` 的属性，这个属性也指向 A。
 
-基础版复制时会读取每个属性，并递归复制属性值。读到 `self` 时，它又开始复制同一个 `source`；再次读到 `self`，又复制同一个 `source`，一直重复，无法结束。
+`self` 是我们自己起的普通属性名，不是特殊语法。第二行没有创建第二个对象，只是让对象的一个属性指回自己：
 
-要处理这个问题，函数需要记住“这个对象已经开始复制了”，再次遇到它时直接返回已经创建的副本。复制完成后，`copy.self` 应当引用 `copy` 自己，不能引用原来的 `source`。
+<figure class="ref-diagram">
+  <div class="ref-heading">循环引用：属性指回对象自己</div>
+  <div class="ref-row">
+    <span class="ref-name">source</span>
+    <span class="ref-arrow"></span>
+    <div class="ref-object"><span class="ref-title">对象 A</span><span class="ref-value">name: '小明'</span><span class="ref-loop">self: A</span></div>
+  </div>
+  <figcaption>沿着 self 再走一次，仍然回到对象 A。</figcaption>
+</figure>
+
+读取 `source.self`，就是沿着 `self` 的箭头走一次，仍然到达 A。读取 `source.self.self`，是沿着箭头再走一次，仍然到达 A。因此上面两个 `===` 的结果都是 `true`。这种沿着引用又回到自己的情况，叫**循环引用**。
+
+**建立循环引用本身可以正常执行。** `source.self = source` 只赋值一次，不会让程序自动不停地运行。出问题的是：用前面的基础版 `deepClone` 去复制它。
+
+基础版的规则是“遇到对象，就调用自己继续复制它的属性”。调用自己，就是这里所说的**递归**。把执行过程展开：
+
+1. 第一次调用 `deepClone(source)`，准备复制对象 A，并创建一个空的副本。
+2. 读到 `name`，它的值是字符串 `'小明'`，直接复制到副本。
+3. 读到 `self`，它的值是对象 A，于是调用 `deepClone(source.self)`。因为 `source.self` 就是 A，这相当于再次开始复制 A。
+4. 第二次调用也创建一个空副本、复制 `name`，然后又读到 `self`，于是第三次开始复制 A。
+5. 每一次调用都在等待下一次调用返回，可下一次又会继续调用下去。最终调用层数过多，出现“调用栈溢出”的错误。
+
+这里始终只有一个原对象 A。**复制函数反复遇到了同一个原对象，却没有记录自己已经开始处理它，因此不断创建新副本、继续递归。**
+
+那么，正确的副本应该是什么样？假设新对象叫 B，变量 `copy` 指向 B：
+
+<figure class="ref-diagram">
+  <div class="ref-heading">正确的副本：各自指向自己</div>
+  <div class="ref-row">
+    <span class="ref-name">source</span><span class="ref-arrow"></span>
+    <div class="ref-object"><span class="ref-title">原对象 A</span><span class="ref-loop">self: A</span></div>
+  </div>
+  <div class="ref-row">
+    <span class="ref-name">copy</span><span class="ref-arrow"></span>
+    <div class="ref-object"><span class="ref-title">新对象 B</span><span class="ref-loop">self: B</span></div>
+  </div>
+  <figcaption>A 与 B 是不同对象；副本的 self 指向 B，不指向 A。</figcaption>
+</figure>
+
+原来的关系是“自己指向自己”，复制后也应该保留这个关系。因此 `copy.self === copy` 应该是 `true`，而 `copy.self === source` 应该是 `false`。
+
+解决思路是：**第一次遇到 A 时，先创建 B，并记下“A 的副本是 B”。再次遇到 A 时，直接使用 B，不再重新复制 A。** B 的属性可以随后慢慢填充，但这条对应关系必须先记下来。
 
 #### 问题二：两个属性引用了同一个对象
 
@@ -206,15 +290,84 @@ source.left.count = 2
 console.log(source.right.count) // 2
 ```
 
-这里 `shared`、`left`、`right` 都只是示例中的变量名或属性名。创建 `source` 时，两次使用了同一个 `shared`，因此 `source.left` 和 `source.right` 引用的是同一个对象。这叫**共享引用**。
+这里 `shared` 是变量名，`left`、`right` 是属性名，都不是特殊语法。第一行创建了对象 `{ count: 1 }`；第二行又创建了外层对象 `source`，但它的 `left`、`right` 属性都指向第一行创建的那个对象。
 
-复制后也需要保留这个关系：`copy.left` 与 `copy.right` 应当引用同一个新对象；这个新对象与原来的 `shared` 分开，所以修改副本不会修改 `shared`。
+下面只画两个属性指向的内部对象，将它叫作 A：
 
-基础版没有记录已经复制过哪些对象，会在复制 `left`、`right` 时分别创建一个新对象，导致它们不再相等。记录“原对象对应哪个副本”就能避免重复创建，也能解决上一种循环引用问题。
+<figure class="ref-diagram">
+  <div class="ref-heading">共享引用：三个入口，同一个对象</div>
+  <div class="ref-row">
+    <div class="ref-sources"><span class="ref-name">shared</span><span class="ref-name">source.left</span><span class="ref-name">source.right</span></div>
+    <span class="ref-arrow"></span>
+    <div class="ref-object"><span class="ref-title">对象 A</span><span class="ref-value">count: 1</span></div>
+  </div>
+  <figcaption>修改前的结构：从任何一个入口访问，找到的都是 A。</figcaption>
+</figure>
+
+所以 `source.left === source.right` 是 `true`。执行 `source.left.count = 2` 时，修改的是 A 的 `count`；再通过 `source.right.count` 读取的仍然是 A 的 `count`，因此得到 `2`。这叫**共享引用**。
+
+**这个例子没有循环引用。** A 里只有一个数字属性，没有指回 `source` 或 A 自己。基础版能复制完，但复制后的关系发生了变化。
+
+基础版会这样执行：
+
+1. 为外层 `source` 创建副本 `copy`。
+2. 复制 `left` 时，遇到 A，创建一个新对象 B，并把 A 的属性复制进去，让 `copy.left` 指向 B。
+3. 复制 `right` 时，又遇到 A。但函数没记住刚才已经复制过 A，于是再创建一个新对象 C，让 `copy.right` 指向 C。
+
+结果变成：
+
+<figure class="ref-diagram">
+  <div class="ref-heading">基础版的结果：共享关系丢失</div>
+  <div class="ref-row">
+    <span class="ref-name">copy.left</span><span class="ref-arrow"></span>
+    <div class="ref-object"><span class="ref-title">新对象 B</span></div>
+  </div>
+  <div class="ref-row">
+    <span class="ref-name">copy.right</span><span class="ref-arrow"></span>
+    <div class="ref-object"><span class="ref-title">新对象 C</span></div>
+  </div>
+  <figcaption>B 和 C 的属性值相同，但它们是两个对象，修改 B 不会影响 C。</figcaption>
+</figure>
+
+你可能会问：深拷贝不是要把对象分开吗，为什么这样也算问题？
+
+这里要区分两层关系：**副本和原对象应当分开；副本内部原本存在的共享关系，应当保留。** 我们希望把原来的两个属性一起带到一份新的对象结构里，而不是让它们从此各用各的对象。
+
+<figure class="ref-diagram">
+  <div class="ref-heading">希望得到的结果：副本内部仍然共享</div>
+  <div class="ref-row">
+    <div class="ref-sources"><span class="ref-name">copy.left</span><span class="ref-name">copy.right</span></div>
+    <span class="ref-arrow"></span>
+    <div class="ref-object"><span class="ref-title">同一个新对象 B</span></div>
+  </div>
+  <figcaption>两个属性共用 B；B 与原来的 A 分开，修改 B 不影响 A。</figcaption>
+</figure>
+
+区别可以通过修改属性来观察：
+
+- 在原对象中，修改 `source.left.count`，从 `source.right.count` 能读到变化，因为它们共用 A。
+- 在正确的副本中，修改 `copy.left.count`，从 `copy.right.count` 也应当能读到变化，因为它们共用 B。
+- 同时，原来的 `shared.count` 不应受到这次修改影响，因为 A 和 B 已经分开。
+- 基础版却让 `copy.left`、`copy.right` 分别使用 B、C，修改 B 不会影响 C，原来的共享关系就丢失了。
+
+因此，我们希望 `copy.left === copy.right` 是 `true`，而 `copy.left === shared` 是 `false`。这两个条件并不矛盾：共享的是**同一个新对象**。
+
+解决思路和问题一相同：复制 `left` 时记下“A 的副本是 B”，复制 `right` 再次遇到 A 时，就直接使用 B。
+
+#### 两个问题为什么能用同一种办法解决
+
+可以把对应关系想成一本记录簿，保存“**这个原对象，对应哪个新对象**”。每次遇到对象，先查记录；有记录就取出已有副本，没有记录才创建副本并登记。
+
+| 遇到的情况 | 基础版的问题 | 查记录、复用副本的作用 |
+| :--- | :--- | :--- |
+| 问题一：通过 `self` 又遇到原对象 | 反复递归，最终调用栈溢出 | 使用已经创建的副本，让副本指向自己 |
+| 问题二：通过 `right` 又遇到原对象 | 把同一个对象复制成两份，丢失共享关系 | 使用已经创建的副本，让两个属性仍然共享它 |
+
+下面的 `WeakMap` 就用来保存这本“记录簿”。先理解它要记什么，再看代码里的查询、登记和取出操作。
 
 ### 2. 实现与验证
 
-`WeakMap` 在这里充当缓存，保存“**原对象 → 对应的新对象**”。下面保留刷题要求中的循环引用版本。
+`WeakMap` 在这里充当缓存，保存“**原对象 → 对应的新对象**”。`map.has(obj)` 检查是否已有记录，`map.get(obj)` 取出对应副本，`map.set(obj, result)` 登记对应关系。下面的实现同时处理循环引用与共享引用。
 
 ```js
 function deepClone(obj, map = new WeakMap()) {

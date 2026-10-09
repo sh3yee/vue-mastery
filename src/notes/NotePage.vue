@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { getChapterHref } from './chapters'
 import type { NoteChapter } from './types'
 import NoteContent from './NoteContent.vue'
+import './reference-diagrams.css'
 
 const props = defineProps<{
   chapter: NoteChapter
