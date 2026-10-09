@@ -37,7 +37,6 @@ watch(currentChapter, (chapter) => {
       </button>
       <div class="app-heading">
         <h1>JavaScript 学习笔记</h1>
-        <p>理解原理，整理知识，在实验中验证。</p>
       </div>
       <span class="chapter-count">{{ noteCount }} 篇笔记 <span>·</span> {{ labCount }} 个实验</span>
     </header>
@@ -164,12 +163,6 @@ summary:focus-visible {
   font-size: 20px;
   font-weight: 650;
   letter-spacing: -.4px;
-}
-
-.app-heading p {
-  margin: 5px 0 0;
-  font-size: 13px;
-  color: #6b7280;
 }
 
 .chapter-count {
