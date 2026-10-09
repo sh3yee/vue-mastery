@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 
 const props = defineProps<{
   modelValue: string
+  ariaLabel?: string
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -10,8 +11,14 @@ const emit = defineEmits<{
 }>()
 
 const textarea = ref<HTMLTextAreaElement | null>(null)
+const gutter = ref<HTMLElement | null>(null)
 // 本地副本，避免 v-model 与手动 DOM 操作相互打架
 const text = ref(props.modelValue)
+const lineCount = computed(() => text.value.split('\n').length)
+
+const handleScroll = () => {
+  if (gutter.value && textarea.value) gutter.value.scrollTop = textarea.value.scrollTop
+}
 
 watch(
   () => props.modelValue,
@@ -67,33 +74,82 @@ function onKeyDown(e: KeyboardEvent) {
 </script>
 
 <template>
-  <textarea
+  <div class="code-editor">
+    <div ref="gutter" class="editor-gutter" aria-hidden="true">
+      <div v-for="line in lineCount" :key="line">{{ line }}</div>
+    </div>
+    <textarea
     ref="textarea"
-    class="code-editor"
+    class="editor-input"
     v-model="text"
+    :aria-label="props.ariaLabel ?? '代码编辑器'"
+    wrap="off"
     spellcheck="false"
     autocomplete="off"
     autocapitalize="off"
     @keydown="onKeyDown"
+    @scroll="handleScroll"
   ></textarea>
+  </div>
 </template>
 
 <style scoped>
 .code-editor {
+  display: flex;
   box-sizing: border-box;
   flex: 1;
   width: 100%;
   height: 100%;
   min-height: 260px;
-  padding: 12px 14px;
-  border: none;
-  outline: none;
-  resize: none;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--editor-background, #1e1e1e);
+  box-shadow: inset 3px 0 transparent;
+  transition: box-shadow .15s ease;
+}
+
+.code-editor:focus-within { box-shadow: inset 3px 0 var(--editor-focus, #737d8c); }
+
+.editor-input, .editor-gutter {
+  box-sizing: border-box;
+  margin: 0;
+  padding-top: 18px;
+  padding-bottom: 18px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 22px;
   tab-size: 2;
-  background: #1e1e1e;
-  color: #d4d4d4;
 }
+
+.editor-gutter {
+  flex: 0 0 auto;
+  min-width: 48px;
+  padding-left: 14px;
+  padding-right: 12px;
+  overflow: hidden;
+  text-align: right;
+  color: var(--editor-muted, #686d76);
+  user-select: none;
+}
+
+.editor-input {
+  display: block;
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 100%;
+  padding-left: 6px;
+  padding-right: 20px;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--editor-foreground, #d8dee9);
+  caret-color: var(--editor-foreground, #e5e7eb);
+  scrollbar-width: thin;
+  scrollbar-color: var(--editor-scrollbar, #454a53) transparent;
+}
+
+.editor-input::selection { background: var(--editor-selection, #414d62); }
 </style>

@@ -24,9 +24,17 @@ export const workerSource = `
     if (t === 'function') return arg.toString();
     if (arg instanceof Error) return arg.name + ': ' + arg.message;
     try {
+      var ancestors = [];
       return JSON.stringify(arg, function (_k, v) {
         if (typeof v === 'function') return '[Function]';
-        if (typeof v === 'undefined') return null; // JSON 里没有 undefined，用 null 占位
+        if (typeof v === 'undefined') return '[undefined]';
+        if (typeof v === 'bigint') return String(v) + 'n';
+        if (typeof v === 'symbol') return String(v);
+        if (v && typeof v === 'object') {
+          while (ancestors.length && ancestors[ancestors.length - 1] !== this) ancestors.pop();
+          if (ancestors.indexOf(v) !== -1) return '[Circular]';
+          ancestors.push(v);
+        }
         return v;
       }, 2);
     } catch (e) {

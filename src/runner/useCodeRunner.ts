@@ -15,6 +15,7 @@ type WorkerMessage =
   | { type: 'done' }
 
 const HARD_TIMEOUT = 5200 // 略晚于 Worker 自身的 5s 硬上限，作为主线程兜底
+const MAX_OUTPUT_LINES = 500
 
 /**
  * 代码运行器：每次运行新建一个 Web Worker（全新全局作用域），
@@ -54,12 +55,16 @@ export function useCodeRunner() {
     if (!data || typeof data !== 'object') return
     switch (data.type) {
       case 'log':
+        if (!['log', 'info', 'warn', 'error'].includes(data.level) || typeof data.text !== 'string') return
         // 完成后仍可能收到迟到输出，一律追加
-        output.value.push({ level: data.level, text: data.text })
+        output.value.push({ level: data.level, text: data.text.slice(0, 20000) })
+        if (output.value.length >= MAX_OUTPUT_LINES) {
+          output.value.push({ level: 'warn', text: '输出达到 500 条，已停止运行。' })
+          stop()
+        }
         break
       case 'done':
         isRunning.value = false
-        clearHardTimer()
         break
       case 'ready':
         break
@@ -74,20 +79,30 @@ export function useCodeRunner() {
 
     const blob = new Blob([workerSource], { type: 'application/javascript' })
     blobUrl = URL.createObjectURL(blob)
-    const w = new Worker(blobUrl)
+    let w: Worker
+    try {
+      w = new Worker(blobUrl)
+    } catch (error) {
+      output.value.push({ level: 'error', text: error instanceof Error ? error.message : 'Worker 创建失败' })
+      stop()
+      return
+    }
     worker.value = w
-    w.addEventListener('message', handleMessage)
+    w.addEventListener('message', (event) => {
+      if (worker.value === w) handleMessage(event)
+    })
     w.addEventListener('error', (e) => {
+      if (worker.value !== w) return
       output.value.push({ level: 'error', text: e.message || 'Worker 加载失败' })
+      stop()
     })
 
-    // 主线程兜底：Worker 若始终不回复 done 则强制终止
+    // 静默结束后仍可能有定时器；到达上限时也必须回收线程。
     hardTimer.value = setTimeout(() => {
       if (isRunning.value) {
         output.value.push({ level: 'error', text: '⚠ 运行超时，已强制停止。' })
-        isRunning.value = false
-        terminateWorker()
       }
+      stop()
     }, HARD_TIMEOUT)
 
     // 立即投递代码；浏览器会等 Worker 设置好 onmessage 后再送达

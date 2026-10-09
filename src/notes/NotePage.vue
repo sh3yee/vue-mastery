@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { getChapterHref } from './chapters'
 import type { NoteChapter } from './types'
+import NoteContent from './NoteContent.vue'
 
 const props = defineProps<{
   chapter: NoteChapter
@@ -15,10 +16,8 @@ const emit = defineEmits<{
 const scrollContainer = ref<HTMLElement | null>(null)
 const activeSection = ref('')
 const outlineOpen = ref(false)
-const copyStatus = ref('')
 let headingElements: HTMLElement[] = []
 let scrollFrame = 0
-let copyResetTimer: ReturnType<typeof setTimeout> | undefined
 
 const title = computed(() => props.chapter.document.title ?? props.chapter.title)
 const headings = computed(() => props.chapter.document.headings)
@@ -70,29 +69,6 @@ const handleNavigateSection = async (event: MouseEvent, section: string) => {
   scrollToSection(section)
 }
 
-const handleContentClick = async (event: MouseEvent) => {
-  if (!(event.target instanceof HTMLElement)) return
-  const button = event.target.closest<HTMLButtonElement>('[data-copy-code]')
-  if (!button) return
-  const code = button.parentElement?.querySelector('pre code')?.textContent
-  if (code === undefined || code === null) return
-  try {
-    await navigator.clipboard.writeText(code)
-    button.textContent = '已复制'
-    copyStatus.value = '代码已复制到剪贴板'
-  } catch {
-    button.textContent = '复制失败'
-    copyStatus.value = '复制失败，请选择代码手动复制'
-  }
-  if (copyResetTimer) clearTimeout(copyResetTimer)
-  copyResetTimer = setTimeout(() => {
-    scrollContainer.value?.querySelectorAll('[data-copy-code]').forEach((item) => {
-      item.textContent = '复制代码'
-    })
-    copyStatus.value = ''
-  }, 1800)
-}
-
 watch(
   () => [props.chapter.document, props.section] as const,
   async () => {
@@ -107,7 +83,6 @@ watch(
 
 onBeforeUnmount(() => {
   if (scrollFrame) cancelAnimationFrame(scrollFrame)
-  if (copyResetTimer) clearTimeout(copyResetTimer)
 })
 </script>
 
@@ -120,7 +95,9 @@ onBeforeUnmount(() => {
           <h1>{{ title }}</h1>
           <p>{{ chapter.description }}</p>
         </header>
-        <div class="markdown-body" v-html="chapter.document.html" @click="handleContentClick" />
+        <div class="markdown-body">
+          <NoteContent :key="chapter.document.html" :html="chapter.document.html" />
+        </div>
         <a class="back-to-top" :href="getChapterHref(chapter)" @click="scrollContainer?.scrollTo({ top: 0 })">回到本章开头 ↑</a>
       </article>
     </main>
@@ -147,7 +124,6 @@ onBeforeUnmount(() => {
         >{{ heading.text }}</a>
       </nav>
     </aside>
-    <span class="sr-only" role="status">{{ copyStatus }}</span>
   </div>
 </template>
 
@@ -363,28 +339,29 @@ onBeforeUnmount(() => {
 .markdown-body :deep(code) {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: .88em;
-  border-radius: 4px;
-  padding: 2px 5px;
-  background: #e9edf3;
-  color: #374151;
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: #edf0f5;
+  color: #526078;
 }
 
 .markdown-body :deep(.note-code-block) {
   position: relative;
-  margin: 18px 0;
-  border: 1px solid #303035;
-  border-radius: 8px;
+  margin: 22px 0 26px;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
   overflow: hidden;
-  background: #1e1e1e;
+  background: #fff;
+  box-shadow: 0 2px 4px #18243b03, 0 8px 24px #18243b04;
 }
 
 .markdown-body :deep(pre) {
   margin: 0;
-  padding: 42px 18px 18px;
+  padding: 22px 24px;
   overflow-x: auto;
-  color: #e6e6e6;
+  color: #334155;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.8;
   tab-size: 2;
 }
 
@@ -397,23 +374,23 @@ onBeforeUnmount(() => {
 }
 
 .markdown-body :deep(.syntax-keyword) {
-  color: #c586c0;
+  color: #8250b5;
 }
 
 .markdown-body :deep(.syntax-string) {
-  color: #ce9178;
+  color: #16715b;
 }
 
 .markdown-body :deep(.syntax-comment) {
-  color: #6a9955;
+  color: #7c8799;
 }
 
 .markdown-body :deep(.syntax-number) {
-  color: #b5cea8;
+  color: #b35c20;
 }
 
 .markdown-body :deep(.syntax-identifier) {
-  color: #9cdcfe;
+  color: #315b83;
 }
 
 .markdown-body :deep(.copy-code) {

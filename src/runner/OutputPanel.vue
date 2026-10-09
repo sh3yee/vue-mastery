@@ -34,27 +34,27 @@ defineProps<{
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
-  background: #0f0f10;
-  color: #e6e6e6;
+  background: var(--output-background, #0f0f10);
+  color: var(--output-foreground, #e6e6e6);
 }
 
 .output-empty {
-  color: #888;
+  color: var(--output-muted, #888);
 }
 
 .output-running {
-  color: #888;
+  color: var(--output-muted, #888);
 }
 
 .output-line.error {
-  color: #ff6b6b;
+  color: var(--output-error, #ff6b6b);
 }
 
 .output-line.warn {
-  color: #ffd166;
+  color: var(--output-warn, #ffd166);
 }
 
 .output-line.info {
-  color: #8dd0ff;
+  color: var(--output-info, #8dd0ff);
 }
 </style>

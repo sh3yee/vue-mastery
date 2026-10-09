@@ -12,6 +12,7 @@ const noteDefinitions = [
   { id: 'closure', title: '闭包', group: '基础概念', description: '理解函数如何记住并访问定义时的变量。' },
   { id: 'this', title: 'this 绑定', group: '基础概念', description: '从调用方式出发，掌握 this 的绑定规则。' },
   { id: 'prototype', title: '原型与继承', group: '基础概念', description: '梳理原型链、属性查找、构造函数与继承。' },
+  { id: 'deep-clone', title: '深拷贝', group: '基础概念', description: '从递归到循环引用，掌握常见类型的深拷贝与边界。' },
   { id: 'call', title: 'call 方法', group: '函数与应用', description: '指定 this，逐个传入参数调用函数。' },
   { id: 'apply', title: 'apply 方法', group: '函数与应用', description: '使用数组或类数组对象传递调用参数。' },
   { id: 'debounce-throttle', title: '防抖与节流', group: '函数与应用', description: '控制高频事件的执行时机，理解实现与边界。' },
