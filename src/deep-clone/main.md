@@ -757,6 +757,21 @@ console.log(copy.self === source)
 4. 为什么 `map.set` 要放在递归之前？为什么每次递归必须传入同一份 `map`？
 5. 为什么 `copy.left === copy.right` 和 `copy.left !== shared` 可以同时成立？
 
+<details>
+<summary>展开参考答案与解释</summary>
+
+1. **赋值只复制引用，没有创建新对象。** `const copy = source` 让两个变量指向同一个对象，所以 `copy === source` 为 `true`。通过 `copy` 修改对象的属性，通过 `source` 也会看到变化。
+
+2. **浅拷贝创建了新的外层对象，但内层对象的引用仍然共享。** 例如 `const copy = { ...source }` 之后，`copy !== source`，但 `copy.profile === source.profile`。给 `copy.name` 赋值只修改副本的外层属性；修改 `copy.profile.score` 则是在修改双方共用的内层对象。
+
+3. **返回值交给发起这次调用的那一层。** 第三节中，`deepClone('小明')` 返回的字符串交给处理内层 `{ name: '小明' }` 的调用，写入 `C.name`。内层遍历结束后返回 C，外层调用接到它并写入 `B.user`。外层最后返回 B，最开始的 `const copy = deepClone(source)` 才接到完整的副本。
+
+4. **先登记副本，递归再次遇到原对象时才能直接复用它。** 创建 `result` 后立刻执行 `map.set(obj, result)`，即使副本尚未填完，处理 `self` 时也能查到它，让副本指回自己，避免无限递归。所有子调用必须传入同一份 `map`，才能查询整次复制中已经登记的对象；若每层都新建缓存，既无法识别循环，也无法保留跨分支的共享关系。
+
+5. **副本内部保留共享关系，同时与原对象分开。** 原来的 `source.left`、`source.right` 都指向 `shared`。第一次复制 `shared` 时创建新对象并登记，第二次遇到它时从缓存取出同一个新对象。因此 `copy.left === copy.right` 为 `true`，而 `copy.left !== shared` 也为 `true`。修改 `copy.left.count` 会影响 `copy.right.count`，但不会影响原来的 `shared.count`。
+
+</details>
+
 如果第 3 题讲不顺，就回看第三节的逐步执行表；如果第 4、5 题讲不顺，就回看第四节的关系图。能解释并验证这些问题，就完成了第一阶段，不必立刻背下一节的综合实现。
 
 ---
