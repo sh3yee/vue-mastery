@@ -15,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const scrollContainer = ref<HTMLElement | null>(null)
+const outlineContainer = ref<HTMLElement | null>(null)
 const activeSection = ref('')
 const outlineOpen = ref(false)
 let headingElements: HTMLElement[] = []
@@ -22,6 +23,20 @@ let scrollFrame = 0
 
 const title = computed(() => props.chapter.document.title ?? props.chapter.title)
 const headings = computed(() => props.chapter.document.headings)
+
+const syncOutlineScroll = () => {
+  const container = outlineContainer.value
+  const activeLink = container?.querySelector<HTMLElement>('[aria-current="location"]')
+  if (!container || !activeLink || !container.clientHeight) return
+  const containerTop = container.getBoundingClientRect().top
+  const linkRect = activeLink.getBoundingClientRect()
+  if (linkRect.top >= containerTop && linkRect.bottom <= containerTop + container.clientHeight) return
+  // 仅滚动目录容器，让当前小节可见，避免带动正文滚动。
+  container.scrollTo({
+    top: container.scrollTop + linkRect.top - containerTop - (container.clientHeight - linkRect.height) / 2,
+    behavior: 'instant',
+  })
+}
 
 const updateActiveSection = () => {
   const container = scrollContainer.value
@@ -71,6 +86,12 @@ const handleNavigateSection = async (event: MouseEvent, section: string) => {
 }
 
 watch(
+  () => [activeSection.value, outlineOpen.value, props.chapter.document] as const,
+  syncOutlineScroll,
+  { flush: 'post' },
+)
+
+watch(
   () => [props.chapter.document, props.section] as const,
   async () => {
     await nextTick()
@@ -114,7 +135,7 @@ onBeforeUnmount(() => {
       >
         本章目录 <span>{{ headings.length }} 节 {{ outlineOpen ? '收起 −' : '展开 +' }}</span>
       </button>
-      <nav id="note-outline-links" class="outline-links" aria-label="本章目录">
+      <nav id="note-outline-links" ref="outlineContainer" class="outline-links" aria-label="本章目录">
         <a
           v-for="heading in headings"
           :key="heading.id"
