@@ -1,89 +1,66 @@
 # Vue Mastery
 
-Vue 3 + TypeScript + Vite 学习项目，使用 Bun 管理依赖并执行开发、类型检查和构建命令。
+**简体中文** | [English](README.en.md)
 
-在线地址：[JavaScript 学习笔记](https://sh3yee.github.io/vue-mastery/)
+一个基于 Vue 3 的 JavaScript 学习项目，把知识笔记、可运行示例和练习题放在一起，方便边读、边改、边验证。
 
-需要 Bun 1.4.2 或更新版本，安装方式见 [Bun 官方文档](https://bun.sh/docs/installation)。
-`bunfig.toml` 强制脚本使用 Bun 运行时和 Bun Shell。
+## 学习内容
 
-## 网页笔记
+| 分类 | 主题 |
+| --- | --- |
+| 基础概念 | 词法作用域、闭包、this 绑定、原型与继承、深拷贝 |
+| 函数与应用 | call、apply、手写调用与对象创建、防抖与节流 |
+| 异步与调度 | 事件循环、Promise |
+| 动手实验 | Promise 与事件循环输出题 |
 
-- 左侧按基础概念、函数与应用、异步与调度分组，点击章节阅读现有的 10 篇笔记。
-- 正文支持 JavaScript / TypeScript / JSON 语法高亮、代码复制、表格、折叠答案；本章目录可跳转到小节，地址可分享、刷新和前进后退。
-- “动手实验”章节保留选题、代码运行、答案与自动保存；切到笔记后再返回会保留编辑状态。
-- 手机端通过顶部菜单打开章节导航，正文上方可展开本章目录。
+笔记和练习内容目前以中文为主。
 
-继续编辑 `src/<主题>/main.md` 即可更新网页内容。新增笔记时在
-`src/notes/chapters.ts` 的 `noteDefinitions` 中添加章节信息；实验专题仍在 `src/topics/index.ts` 注册。
-Markdown 由 `notes-plugin.ts` 使用 Bun 内置解析器转换成网页，无需新增渲染依赖。
+## 使用方式
 
-## GitHub Pages 部署
+- **阅读笔记**：按分类浏览，通过章节目录定位内容，查看关系图和折叠说明。
+- **运行示例**：直接编辑、运行笔记中的 JavaScript 示例，观察输出，修改条件验证理解。
+- **完成练习**：先预测执行结果，再运行代码，对照预期输出与解析。
 
-首次发布时，在仓库 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。
-随后在 **Actions → Deploy GitHub Pages** 中点击 **Run workflow** 完成首次部署。
-之后推送到 `main` 分支会自动更新网站。
+页面支持移动端阅读和章节链接分享。本地开发模式下，实验题的代码修改会自动保存到 `public/runner-edits.json`；构建预览模式不会写入该文件。
 
-工作流使用 `package.json` 中指定的 Bun 版本、`bun.lock` 锁定的依赖和 `bun run build`。
-部署路径从 GitHub Pages 配置读取，本地开发继续使用根路径。
+## 快速开始
 
-在线版支持阅读笔记、复制代码和运行实验。实验编辑不会写回仓库；
-自动保存到 `public/runner-edits.json` 仅在本地开发环境可用。
-
-## Recommended IDE Setup
-
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
+需要 **Bun 1.4.2 或更新版本**。在项目根目录执行：
 
 ```powershell
 bun install --frozen-lockfile
-```
-
-依赖版本统一由 `bun.lock` 管理，请将它提交到 Git。更新依赖后使用 `bun install` 同步锁文件。
-`node_modules` 是 Bun 使用的依赖目录；Bun 类型和 Vite 内部仍包含兼容类型，
-编辑持久化使用 Bun 支持的 `node:fs` API 保留原子写入，无需单独安装 Node.js。
-
-### Compile and Hot-Reload for Development
-
-```powershell
 bun run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+打开终端显示的本地地址即可开始阅读和练习。
 
-```powershell
-bun run build
-```
+## 常用命令
 
-构建先执行 Vue 类型检查，通过后再打包；构建失败会返回非零退出码。
-`scripts/vue-tsc.ts` 通过 Bun 加载插件保留 vue-tsc 的 Vue 编译器补丁，
-确保组件脚本和模板都参与类型检查，无需安装 Node.js。
+| 命令 | 用途 |
+| --- | --- |
+| `bun run dev` | 启动本地开发服务 |
+| `bun run type-check` | 检查 TypeScript 与 Vue 组件类型 |
+| `bun run build` | 先检查类型，再构建到 `dist` |
+| `bun run build-only` | 仅构建，跳过类型检查 |
+| `bun run preview` | 在本地预览已有构建结果 |
 
-### Type-Check Only
+## 项目结构
 
-```powershell
-bun run type-check
-```
+| 路径 | 内容 |
+| --- | --- |
+| `src/<主题>/main.md` | 各主题的学习笔记 |
+| `src/notes/` | 笔记展示、章节导航与章节注册 |
+| `src/topics/` | 实验题目、预期输出与解析 |
+| `src/runner/` | 代码编辑器、运行器与输出面板 |
+| `notes-plugin.ts` | 将 Markdown 笔记转换为页面内容 |
+| `notebook.md` | 学习笔记的编写与整理规范 |
 
-### Build Only
+技术栈：Vue 3、TypeScript、Vite、Bun。
 
-```powershell
-bun run build-only
-```
+## 补充学习内容
 
-向 Vite 传递构建参数时，使用 `bun run build-only --base=/your-path/`。
+**修改笔记**：编辑对应主题的 `main.md`。编写规范见 [notebook.md](notebook.md)，示例应保持短小，并能独立运行。
 
-### Preview Production Build
+**新增笔记**：创建 `src/<主题>/main.md`，然后在 `src/notes/chapters.ts` 的 `noteDefinitions` 中登记章节。
 
-```powershell
-bun run preview
-```
+**新增实验**：参考 `src/topics/promise-event-loop/index.ts` 定义题目、预期输出与解析，再在 `src/topics/index.ts` 中注册专题。
