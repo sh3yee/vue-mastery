@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 import { runInNewContext } from 'node:vm'
-import { workerSource } from '../src/runner/workerSource'
-import { renderNote } from '../notes-plugin'
-import { createHtmlPreview } from '../src/runner/htmlPreview'
+import { workerSource } from '../src/shared/code-playground/workerSource'
+import { renderNote } from '../tooling/markdown/render'
+import { createHtmlPreview } from '../src/shared/code-playground/htmlPreview'
 
 const execute = (code: string) => {
   const messages: { type: string; text?: string; level?: string }[] = []
@@ -68,7 +68,7 @@ test('HTML 预览保留页面内容，并转发日志和按钮提示', () => {
 
 test('所有章节的围栏代码块都保留交互挂载点，包括折叠块', async () => {
   let total = 0
-  for await (const path of new Bun.Glob('src/*/main.md').scan('.')) {
+  for await (const path of new Bun.Glob('content/notes/*/main.md').scan('.')) {
     const source = await Bun.file(path).text()
     let count = 0
     Bun.markdown.render(source, { code: () => { count += 1; return '' } })
@@ -81,7 +81,7 @@ test('所有章节的围栏代码块都保留交互挂载点，包括折叠块',
 })
 
 test('对象关系图渲染为 HTML 图示，不生成代码运行入口', async () => {
-  const document = await renderNote(await Bun.file('src/deep-clone/main.md').text())
+  const document = await renderNote(await Bun.file('content/notes/deep-clone/main.md').text())
   const figures = document.html.match(/<figure class="ref-diagram">[\s\S]*?<\/figure>/g) ?? []
   expect(figures).toHaveLength(7)
   for (const figure of figures) {

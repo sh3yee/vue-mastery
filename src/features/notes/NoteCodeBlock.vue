@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import CodeEditor from '../runner/CodeEditor.vue'
-import OutputPanel from '../runner/OutputPanel.vue'
-import { useCodeRunner } from '../runner/useCodeRunner'
-import type { LogLevel } from '../runner/useCodeRunner'
-import { createHtmlPreview } from '../runner/htmlPreview'
+import CodeEditor from '../../shared/code-playground/CodeEditor.vue'
+import OutputPanel from '../../shared/code-playground/OutputPanel.vue'
+import { useCodeRunner } from '../../shared/code-playground/useCodeRunner'
+import type { LogLevel } from '../../shared/code-playground/useCodeRunner'
+import { createHtmlPreview } from '../../shared/code-playground/htmlPreview'
 
 const LANGUAGE_LABELS: Record<string, string> = { js: 'JavaScript', javascript: 'JavaScript', html: 'HTML', text: 'Text', ts: 'TypeScript', typescript: 'TypeScript' }
 

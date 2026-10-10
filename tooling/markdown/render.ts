@@ -1,6 +1,5 @@
-import type { Plugin } from 'vite'
-import type { NoteDocument, NoteHeading } from './src/notes/types'
-import { highlightCode } from './notes-code-highlight'
+import type { NoteDocument, NoteHeading } from '../../contracts/content'
+import { highlightCode } from './highlight'
 
 const ALLOWED_TAGS = new Set([
   'p', 'br', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'del',
@@ -34,7 +33,7 @@ const isSafeUrl = (value: string) => {
   }
 }
 
-export const renderNote = async (source: string): Promise<NoteDocument> => {
+export const renderNote = async (source: string, resolveResource: (url: string) => string = (url) => url): Promise<NoteDocument> => {
   const headings: NoteHeading[] = []
   const codeBlocks: string[] = []
   // 从 Markdown 语法树提取标题，代码块里的 # 不会被误识别为目录。
@@ -76,7 +75,7 @@ export const renderNote = async (source: string): Promise<NoteDocument> => {
         for (const attribute of ['href', 'src']) {
           const value = element.getAttribute(attribute)
           if (value !== null) {
-            if (isSafeUrl(value)) element.setAttribute(attribute, value)
+            if (isSafeUrl(value)) element.setAttribute(attribute, resolveResource(value))
             else element.removeAttribute(attribute)
           }
         }
@@ -128,14 +127,3 @@ export const renderNote = async (source: string): Promise<NoteDocument> => {
   }
 }
 
-export const notesPlugin = (): Plugin => ({
-  name: 'notes-markdown',
-  enforce: 'pre',
-  async load(id) {
-    const [file, query = ''] = id.split('?')
-    if (!file?.endsWith('.md') || !new URLSearchParams(query).has('note')) return
-    this.addWatchFile(file)
-    const note = await renderNote(await Bun.file(file).text())
-    return `export default ${JSON.stringify(note)}`
-  },
-})

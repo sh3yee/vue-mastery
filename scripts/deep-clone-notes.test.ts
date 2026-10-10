@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-const source = await Bun.file('src/deep-clone/main.md').text()
+const source = await Bun.file('content/notes/deep-clone/main.md').text()
 const examples: string[] = []
 Bun.markdown.render(source, {
   code: (code, meta) => {

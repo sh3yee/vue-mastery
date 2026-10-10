@@ -1,4 +1,4 @@
-import type { Question, Topic } from '../../runner/types'
+import type { Question } from '../../contracts/content'
 
 // Promise + Event Loop 输出题专项：20 道题，按 8 个考点分组。
 // 预期输出均经手工推导，可用运行器复核。
@@ -413,10 +413,4 @@ async1 end`,
   },
 ]
 
-export const promiseEventLoopTopic: Topic = {
-  id: 'promise-event-loop',
-  name: 'Promise + Event Loop',
-  description:
-    'setTimeout / Promise / async-await / Promise.all 等异步执行顺序题。选一道题 → 在编辑器里改/运行代码 → 右侧看输出，再点「显示答案」对照解析。',
-  questions,
-}
+export default questions

@@ -1,22 +1,24 @@
 {
   "include": [
     "vite.config.*",
-    "runner-edits-server.ts",
-    "notes-plugin.ts",
+    "tooling/**/*.ts",
     "scripts/**/*.ts",
-    "vitest.config.*",
-    "cypress.config.*",
-    "playwright.config.*",
-    "eslint.config.*"
+    "contracts/**/*.ts",
+    "content/**/*.ts",
+    "tests/**/*.ts"
   ],
   "compilerOptions": {
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "target": "ESNext",
     "module": "preserve",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
-    "types": ["bun"],
+    "types": [
+      "bun"
+    ],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

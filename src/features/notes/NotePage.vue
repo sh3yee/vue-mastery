@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { getChapterHref } from './chapters'
-import type { NoteChapter } from './types'
+import { getChapterHref } from '../../content/links'
+import type { NoteChapter } from '../../../contracts/content'
 import NoteContent from './NoteContent.vue'
 import './reference-diagrams.css'
 

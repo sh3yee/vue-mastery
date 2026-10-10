@@ -1,155 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import CodeEditor from './CodeEditor.vue'
-import OutputPanel from './OutputPanel.vue'
-import { useCodeRunner } from './useCodeRunner'
-import { usePersistedEdits } from './usePersistedEdits'
-import type { Question, Topic } from './types'
+import { computed } from 'vue'
+import type { Topic } from '../../../contracts/content'
+import CodeEditor from '../../shared/code-playground/CodeEditor.vue'
+import OutputPanel from '../../shared/code-playground/OutputPanel.vue'
+import { useExerciseSession } from './useExerciseSession'
 
-const props = defineProps<{
-  topic: Topic
-  // 可选：传入多个专题时，页面头部出现切换器；只有一个专题时不显示
-  availableTopics?: Topic[]
-  embedded?: boolean
-}>()
-
-const emit = defineEmits<{
-  'update:topicId': [id: string]
-}>()
-
-const { output, isRunning, runCode, stop, clear } = useCodeRunner()
-const {
-  saving,
-  lastSavedAt,
-  devWritable,
-  loadFromFile,
-  getEdit,
-  setEdit,
-  removeEdit,
-} = usePersistedEdits()
-
-const code = ref('')
-const currentId = ref<number | null>(null)
-const showAnswer = ref(false)
-
-// 记录「上一次载入的题目」与「它的原始代码」，用于在切换时把改动落进 edits
-let lastId: number | null = null
-let lastOriginal = ''
-let lastTopicId = ''
-// reset 时置 true，让紧接着的 watch(code) 跳过 flush，避免把存档当“与原题一致”删掉
-let suppressFlushOnce = false
-
-// 按 Question.group 分组，用于侧边栏展示
-const grouped = computed(() => {
-  const m = new Map<string, Question[]>()
-  for (const q of props.topic.questions) {
-    const list = m.get(q.group)
-    if (list) list.push(q)
-    else m.set(q.group, [q])
-  }
-  return [...m.entries()].map(([group, items]) => ({ group, items }))
-})
-
-const currentQuestion = computed(() => {
-  const id = currentId.value
-  if (id === null) return null
-  return props.topic.questions.find((q) => q.id === id) ?? null
-})
-
-// 专题切换器用的 v-model：写入时通过事件抛给上层
-const topicIdModel = computed({
-  get: () => props.topic.id,
-  set: (v: string) => emit('update:topicId', v),
-})
-
-// 当前题目是否有已保存的改动（侧边栏打点用）
-function hasSavedEdit(q: Question): boolean {
-  const e = getEdit(props.topic.id, q.id)
-  return e !== undefined && e !== q.code
-}
-
-// 当前编辑器里的代码是否相对原题改过（标题旁的「已编辑」用）
-const isModified = computed(() => {
-  const q = currentQuestion.value
-  return q !== null && code.value !== q.code
-})
-
-// 把当前编辑器里的代码同步进 edits（仅在确实改过、且与已存值不同时才写，
-// 与原题一致时顺便清掉旧记录）。幂等，载入题目时重复调用也不会引发多余写盘。
-function flushCurrentEdit() {
-  if (suppressFlushOnce) {
-    suppressFlushOnce = false
-    return
-  }
-  if (lastId === null) return
-  const qid = lastId
-  if (code.value === lastOriginal) {
-    if (getEdit(lastTopicId, qid) !== undefined) removeEdit(lastTopicId, qid)
-    return
-  }
-  if (getEdit(lastTopicId, qid) !== code.value) setEdit(lastTopicId, qid, code.value)
-}
-
-// 任意代码变动都尝试落进 edits；真正的写盘由 composable 里的 edits watcher 去抖触发
-watch(code, () => {
-  flushCurrentEdit()
-})
-
-function loadQuestion(q: Question) {
-  stop()
-  // 先把上一题的改动落盘，再切到新题
-  flushCurrentEdit()
-  code.value = getEdit(props.topic.id, q.id) ?? q.code
-  currentId.value = q.id
-  lastId = q.id
-  lastOriginal = q.code
-  lastTopicId = props.topic.id
-  showAnswer.value = false
-  clear()
-}
-
-function onRun() {
-  runCode(code.value)
-}
-
-// 重置是“暂时”的：只把编辑器切回原题代码，不删存档、不写盘。
-// 刷新页面后，loadFromFile 会把存档里的改动恢复回来。
-function onReset() {
-  const q = currentQuestion.value
-  if (q) {
-    suppressFlushOnce = true
-    code.value = q.code
-  }
-}
-
-function formatTime(ts: number): string {
-  const d = new Date(ts)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
-}
-
-const saveStatus = computed(() => {
-  if (!devWritable.value) return '自动保存仅支持 bun run dev'
-  if (saving.value) return '保存中…'
-  if (lastSavedAt.value) return `已自动保存 ${formatTime(lastSavedAt.value)}`
-  return ''
-})
-
-// 初次进入：先读盘恢复编辑，再载入第一题
-onMounted(async () => {
-  await loadFromFile()
-  const first = props.topic.questions[0]
-  if (first) loadQuestion(first)
-})
-
-// 切换专题时：重置为新专题的第一题
-watch(
-  () => props.topic.id,
-  () => {
-    const first = props.topic.questions[0]
-    if (first) loadQuestion(first)
-  },
-)
+const props = defineProps<{ topic: Topic; availableTopics?: Topic[]; embedded?: boolean }>()
+const emit = defineEmits<{ 'update:topicId': [id: string] }>()
+const { output, isRunning, stop, code, currentId, showAnswer, grouped, currentQuestion, hasSavedEdit, isModified, loadQuestion, handleRun, handleReset, saveStatus } = useExerciseSession(() => props.topic)
+const topicIdModel = computed({ get: () => props.topic.id, set: (id: string) => emit('update:topicId', id) })
 </script>
 
 <template>
@@ -201,9 +60,9 @@ watch(
             <template v-else>未选择题目</template>
           </div>
           <div class="toolbar-actions">
-            <button class="btn primary" :disabled="isRunning" @click="onRun">运行</button>
+            <button class="btn primary" :disabled="isRunning" @click="handleRun">运行</button>
             <button class="btn" :disabled="!isRunning" @click="stop">停止</button>
-            <button class="btn" @click="onReset">重置</button>
+            <button class="btn" @click="handleReset">重置</button>
             <button class="btn" @click="showAnswer = !showAnswer">
               {{ showAnswer ? '隐藏答案' : '显示答案' }}
             </button>
@@ -219,7 +78,7 @@ watch(
             <div class="pane-label">
               代码 <span class="hint">Ctrl / Cmd + Enter 运行</span>
             </div>
-            <CodeEditor v-model="code" @run="onRun" />
+            <CodeEditor v-model="code" @run="handleRun" />
           </section>
 
           <section class="pane output-pane">

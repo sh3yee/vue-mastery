@@ -42,25 +42,32 @@ bun run dev
 | `bun run type-check` | 检查 TypeScript 与 Vue 组件类型 |
 | `bun run build` | 先检查类型，再构建到 `dist` |
 | `bun run build-only` | 仅构建，跳过类型检查 |
+| `bun run check-content` | 检查章节、题目和资源完整性 |
+| `bun test` | 运行回归测试 |
 | `bun run preview` | 在本地预览已有构建结果 |
 
 ## 项目结构
 
 | 路径 | 内容 |
 | --- | --- |
-| `src/<主题>/main.md` | 各主题的学习笔记 |
-| `src/notes/` | 笔记展示、章节导航与章节注册 |
-| `src/topics/` | 实验题目、预期输出与解析 |
-| `src/runner/` | 代码编辑器、运行器与输出面板 |
-| `notes-plugin.ts` | 将 Markdown 笔记转换为页面内容 |
-| `notebook.md` | 学习笔记的编写与整理规范 |
+| `content/notes/` | 各主题的 Markdown 笔记和配套资源 |
+| `content/exercises/` | 实验题目、预期输出与解析 |
+| `content/catalog.ts` | 章节信息、分组和顺序 |
+| `contracts/` | 内容与存档的数据类型 |
+| `src/app/` | 应用布局和章节导航 |
+| `src/features/` | 笔记阅读与实验功能 |
+| `src/shared/code-playground/` | 共用的编辑器、运行器和输出面板 |
+| `tooling/` | Markdown 转换与本地保存服务 |
+| `.codex/skills/learning-notes/` | 项目级笔记编写技能 |
 
 技术栈：Vue 3、TypeScript、Vite、Bun。
 
 ## 补充学习内容
 
-**修改笔记**：编辑对应主题的 `main.md`。编写规范见 [notebook.md](notebook.md)，示例应保持短小，并能独立运行。
+**修改笔记**：编辑对应主题的 `main.md`。编写规范见 [笔记编写规范](.codex/skills/learning-notes/references/notebook.md)，示例应保持短小，并能独立运行。
 
-**新增笔记**：创建 `src/<主题>/main.md`，然后在 `src/notes/chapters.ts` 的 `noteDefinitions` 中登记章节。
+**新增笔记**：创建 `content/notes/<主题>/main.md`，然后在 `content/catalog.ts` 中登记章节。
 
-**新增实验**：参考 `src/topics/promise-event-loop/index.ts` 定义题目、预期输出与解析，再在 `src/topics/index.ts` 中注册专题。
+**新增实验**：参考 `content/exercises/promise-event-loop.ts` 定义题目、预期输出与解析，再在 `content/catalog.ts` 中注册专题。
+
+目录分层与依赖约定见 [架构说明](docs/architecture.md)。根目录 `AGENTS.md` 会引导 Codex 在笔记任务中读取项目技能。

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { runnerEditsPlugin } from './runner-edits-server'
-import { notesPlugin } from './notes-plugin'
+import { runnerEditsPlugin } from './tooling/edits-server'
+import { notesPlugin } from './tooling/markdown/plugin'
 
 // https://vite.dev/config/
 export default defineConfig({
