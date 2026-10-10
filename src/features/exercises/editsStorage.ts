@@ -6,13 +6,15 @@ export interface EditsStorage {
   write: (data: EditsData) => Promise<void>
 }
 
+type EditsRequest = (url: string, options?: RequestInit) => Promise<Response>
+
 const isOkResponse = async (response: Response) => {
   if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) return false
   const data: unknown = await response.json()
   return data !== null && typeof data === 'object' && 'ok' in data && data.ok === true
 }
 
-export const createEditsStorage = (baseUrl: string, development: boolean, request: typeof fetch = fetch): EditsStorage => ({
+export const createEditsStorage = (baseUrl: string, development: boolean, request: EditsRequest = fetch): EditsStorage => ({
   async read() {
     const response = await request(baseUrl + 'runner-edits.json', { cache: 'no-store' })
     if (response.status === 404) return { version: 1, edits: {} }

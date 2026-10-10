@@ -1,5 +1,6 @@
 {
   "include": [
+    "env.d.ts",
     "vite.config.*",
     "tooling/**/*.ts",
     "scripts/**/*.ts",

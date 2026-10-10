@@ -121,7 +121,7 @@ test('无效存档不能被接受，读取失败后禁止覆盖', async () => {
 
 test('预览不探测写入接口，开发接口返回 HTML 不会误判可写', async () => {
   let requests = 0
-  const request = (async () => { requests++; return new Response('<html></html>', { headers: { 'content-type': 'text/html' } }) }) as typeof fetch
+  const request = async () => { requests++; return new Response('<html></html>', { headers: { 'content-type': 'text/html' } }) }
   expect(await createEditsStorage('/', false, request).canWrite()).toBe(false)
   expect(requests).toBe(0)
   expect(await createEditsStorage('/', true, request).canWrite()).toBe(false)
