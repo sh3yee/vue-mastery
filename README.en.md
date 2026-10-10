@@ -58,16 +58,16 @@ Open the local URL printed in the terminal to start reading and practicing.
 | `src/features/` | Note reading and exercise features |
 | `src/shared/code-playground/` | Shared editor, runner, and output panel |
 | `tooling/` | Markdown processing and local save service |
-| `.codex/skills/learning-notes/` | Project skill for writing learning notes |
+| `docs/nodebook.md` | Backup of the note-writing skill |
 
 Built with Vue 3, TypeScript, Vite, and Bun.
 
 ## Adding learning material
 
-**Update a note**: Edit the topic’s `main.md`. Follow the guidelines in [note-writing guidelines](.codex/skills/learning-notes/references/notebook.md), keeping examples short and independently runnable.
+**Update a note**: Edit the topic’s `main.md`. Follow the guidelines in [note-writing guidelines](docs/nodebook.md), keeping examples short and independently runnable.
 
 **Add a note**: Create `content/notes/<topic>/main.md`, then register the chapter in `content/catalog.ts`.
 
 **Add exercises**: Use `content/exercises/promise-event-loop.ts` as a reference for questions, expected output, and explanations, then register the topic in `content/catalog.ts`.
 
-See [architecture notes](docs/architecture.md) for module boundaries. The root `AGENTS.md` directs Codex to read the project skill for note-writing tasks.
+See [architecture notes](docs/architecture.md) for module boundaries. Local skills in `.codex/skills/` are excluded from Git; backups are kept in `docs/nodebook.md`.

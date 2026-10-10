@@ -58,16 +58,16 @@ bun run dev
 | `src/features/` | 笔记阅读与实验功能 |
 | `src/shared/code-playground/` | 共用的编辑器、运行器和输出面板 |
 | `tooling/` | Markdown 转换与本地保存服务 |
-| `.codex/skills/learning-notes/` | 项目级笔记编写技能 |
+| `docs/nodebook.md` | 笔记编写技能备份 |
 
 技术栈：Vue 3、TypeScript、Vite、Bun。
 
 ## 补充学习内容
 
-**修改笔记**：编辑对应主题的 `main.md`。编写规范见 [笔记编写规范](.codex/skills/learning-notes/references/notebook.md)，示例应保持短小，并能独立运行。
+**修改笔记**：编辑对应主题的 `main.md`。编写规范见 [笔记编写规范](docs/nodebook.md)，示例应保持短小，并能独立运行。
 
 **新增笔记**：创建 `content/notes/<主题>/main.md`，然后在 `content/catalog.ts` 中登记章节。
 
 **新增实验**：参考 `content/exercises/promise-event-loop.ts` 定义题目、预期输出与解析，再在 `content/catalog.ts` 中注册专题。
 
-目录分层与依赖约定见 [架构说明](docs/architecture.md)。根目录 `AGENTS.md` 会引导 Codex 在笔记任务中读取项目技能。
+目录分层与依赖约定见 [架构说明](docs/architecture.md)。本地技能位于 `.codex/skills/`，不纳入 Git；备份保存在 `docs/nodebook.md`。

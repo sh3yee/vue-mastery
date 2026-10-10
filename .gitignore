@@ -32,3 +32,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Local Codex skills (backup: docs/nodebook.md)
+/.codex/skills/
