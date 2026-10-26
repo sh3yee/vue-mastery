@@ -42,25 +42,31 @@ console.log(obj.calculate(2, 3)) // 6
 
 ```js
 function readValue() {
-  'use strict'
-  return this.value
+  'use strict' // 在这个函数内启用严格模式
+  return this.value // 如果 this 是 undefined，读取 value 时会抛出 TypeError
 }
 
 const first = { value: 1, read: readValue }
 const second = { value: 10, read: readValue }
-console.log(first.read()) // 1
-console.log(second.read()) // 10
+console.log(first.read()) // 1：通过 first 调用，this 是 first
+console.log(second.read()) // 10：通过 second 调用，this 是 second
 console.log(first.read === second.read) // true
 
-const detached = first.read
+const detached = first.read // 只保存函数引用，不执行函数，也不绑定 first；这一步不会报错
 try {
-  detached()
+  detached() // 没有通过对象调用，严格模式下 this 是 undefined；执行到 this.value 时才报错
 } catch (error) {
-  console.log(error instanceof TypeError) // true
+  console.log(error instanceof TypeError) // true：捕获到读取 undefined 属性产生的类型错误
 }
 ```
 
-`detached()` 没有通过 `first` 调用。示例使用 `'use strict'` 明确启用严格模式，此时普通调用的 `this` 是 `undefined`，读取 `this.value` 会报错。函数引用没有变，调用方式变了。箭头函数使用外层的 `this`，不适用这里的方法调用规则；本章先使用普通函数推导。
+`first.read()` 通过 `first` 调用函数，所以函数里的 `this` 是 `first`，读取 `this.value` 得到 `1`。`const detached = first.read` 只是把同一个函数的引用保存到变量 `detached`，不会把 `first` 一起绑定过去。
+
+随后调用 `detached()` 时，调用表达式里没有 `first.`。由于 `readValue` 内写了 `'use strict'`，这次普通调用中的 `this` 是 `undefined`；继续读取 `this.value` 就会抛出 `TypeError`，因此 `catch` 中输出 `true`。这里的关键是：**函数还是同一个函数，但调用方式变了，`this` 也随之改变。**
+
+所以，**赋给变量本身不会报错；以 `detached()` 的方式调用，再读取 `this.value` 才报错。**
+
+即使这个普通函数处于非严格模式，`detached()` 也不会自动使用 `first`，此时 `this` 会默认指向全局对象（可通过 `globalThis` 访问）。读取 `this.value` 时，读取的是全局对象的 `value`，而不是 `first.value`。
 
 如果不想长期给对象添加方法，原生 `call`、`apply`、`bind` 可以直接完成这个需求：
 
