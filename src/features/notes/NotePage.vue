@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { getChapterHref } from '../../content/links'
 import type { NoteChapter } from '../../../contracts/content'
 import NoteContent from './NoteContent.vue'
+import { useReadingProgress } from './useReadingProgress'
 import './reference-diagrams.css'
 
 const props = defineProps<{
@@ -20,6 +21,11 @@ const activeSection = ref('')
 const outlineOpen = ref(false)
 let headingElements: HTMLElement[] = []
 let scrollFrame = 0
+const { restoreReadingProgress, saveReadingProgress, scheduleSaveReadingProgress } = useReadingProgress(
+  scrollContainer,
+  () => props.chapter.id,
+  () => props.section,
+)
 
 const title = computed(() => props.chapter.document.title ?? props.chapter.title)
 const headings = computed(() => props.chapter.document.headings)
@@ -69,6 +75,7 @@ const scrollToSection = (section: string) => {
 }
 
 const handleScroll = () => {
+  scheduleSaveReadingProgress()
   if (scrollFrame) return
   scrollFrame = requestAnimationFrame(() => {
     scrollFrame = 0
@@ -98,7 +105,9 @@ watch(
     const container = scrollContainer.value
     if (!container) return
     headingElements = Array.from(container.querySelectorAll<HTMLElement>('[id^="section-"]'))
-    scrollToSection(props.section)
+    if (restoreReadingProgress()) updateActiveSection()
+    else scrollToSection(props.section)
+    saveReadingProgress()
   },
   { immediate: true, flush: 'post' },
 )
@@ -110,7 +119,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="note-layout">
-    <main ref="scrollContainer" class="note-scroll" @scroll.passive="handleScroll">
+    <main ref="scrollContainer" class="note-scroll" @scroll.passive="handleScroll" @toggle.capture="scheduleSaveReadingProgress">
       <article class="note-article">
         <header class="note-header">
           <div class="note-breadcrumb">{{ chapter.group }} <span>/</span> 第 {{ String(chapterNumber).padStart(2, '0') }} 章</div>
